@@ -2,3 +2,4 @@
 . ${ROOT_DIR}/${KERNEL_DIR}/build.config.aarch64
 
 DEFCONFIG=rmx3834_defconfig
+POST_DEFCONFIG_CMDS="check_defconfig"
