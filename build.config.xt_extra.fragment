@@ -1,28 +1,29 @@
+# vim: ft=bash:
 POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && update_config_xt_extra"
 function update_config_xt_extra() {
-    ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
-         -m CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
-         -m CONFIG_NETFILTER_XT_MATCH_CONNBYTES \
-         -m CONFIG_IP_SET \
-         --set-val CONFIG_IP_SET_MAX 256 \
-         -m CONFIG_NETFILTER_XT_SET \
-         -m CONFIG_IP_SET_BITMAP_IP \
-         -m CONFIG_IP_SET_BITMAP_IPMAC \
-         -m CONFIG_IP_SET_BITMAP_PORT \
-         -m CONFIG_IP_SET_HASH_IP \
-         -m CONFIG_IP_SET_HASH_IPMARK \
-         -m CONFIG_IP_SET_HASH_IPPORT \
-         -m CONFIG_IP_SET_HASH_IPPORTIP \
-         -m CONFIG_IP_SET_HASH_IPPORTNET \
-         -m CONFIG_IP_SET_HASH_IPMAC \
-         -m CONFIG_IP_SET_HASH_MAC \
-         -m CONFIG_IP_SET_HASH_NETPORTNET \
-         -m CONFIG_IP_SET_HASH_NET \
-         -m CONFIG_IP_SET_HASH_NETNET \
-         -m CONFIG_IP_SET_HASH_NETPORT \
-         -m CONFIG_IP_SET_HASH_NETIFACE \
-         -m CONFIG_IP_SET_LIST_SET \
+  ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+    -m CONFIG_NETFILTER_XT_MATCH_MULTIPORT \
+    -m CONFIG_NETFILTER_XT_MATCH_CONNBYTES \
+    -m CONFIG_IP_SET \
+    --set-val CONFIG_IP_SET_MAX 256 \
+    -m CONFIG_NETFILTER_XT_SET \
+    -m CONFIG_IP_SET_BITMAP_IP \
+    -m CONFIG_IP_SET_BITMAP_IPMAC \
+    -m CONFIG_IP_SET_BITMAP_PORT \
+    -m CONFIG_IP_SET_HASH_IP \
+    -m CONFIG_IP_SET_HASH_IPMARK \
+    -m CONFIG_IP_SET_HASH_IPPORT \
+    -m CONFIG_IP_SET_HASH_IPPORTIP \
+    -m CONFIG_IP_SET_HASH_IPPORTNET \
+    -m CONFIG_IP_SET_HASH_IPMAC \
+    -m CONFIG_IP_SET_HASH_MAC \
+    -m CONFIG_IP_SET_HASH_NETPORTNET \
+    -m CONFIG_IP_SET_HASH_NET \
+    -m CONFIG_IP_SET_HASH_NETNET \
+    -m CONFIG_IP_SET_HASH_NETPORT \
+    -m CONFIG_IP_SET_HASH_NETIFACE \
+    -m CONFIG_IP_SET_LIST_SET
 
-    (cd ${OUT_DIR} && \
-     make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+  (cd ${OUT_DIR} &&
+    make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
 }
