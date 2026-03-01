@@ -1,0 +1,10 @@
+# vim: ft=bash:
+POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && update_config_runc"
+function update_config_runc() {
+  ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+    -e CONFIG_USER_NS \
+    -e CONFIG_PID_NS
+
+  (cd ${OUT_DIR} &&
+    make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+}
