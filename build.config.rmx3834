@@ -3,4 +3,15 @@
 . ${ROOT_DIR}/${KERNEL_DIR}/build.config.aarch64
 
 DEFCONFIG=rmx3834_defconfig
-POST_DEFCONFIG_CMDS="check_defconfig"
+POST_DEFCONFIG_CMDS="check_defconfig && update_config"
+SKIP_MRPROPER=1
+
+function update_config() {
+  ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+    -d CONFIG_MODULE_SIG \
+    -d CONFIG_MODULE_SIG_ALL \
+    -d CONFIG_MODULE_SIG_FORCE
+
+  (cd ${OUT_DIR} &&
+    make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+}
