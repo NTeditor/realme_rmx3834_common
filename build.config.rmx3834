@@ -14,7 +14,8 @@ function update_config() {
     -e CONFIG_TMPFS_XATTR \
     -e CONFIG_TMPFS_POSIX_ACL \
     -e CONFIG_USER_NS \
-    -e CONFIG_PID_NS
+    -e CONFIG_PID_NS \
+    -e CONFIG_KSU_MANUAL_HOOK
 
   (cd ${OUT_DIR} &&
     make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
