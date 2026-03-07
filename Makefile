@@ -443,7 +443,11 @@ $(info CCACHE: $(CCACHE))
 CC			:= $(CCACHE) $(CC)
 HOSTCC	:= $(CCACHE) $(HOSTCC)
 HOSTCXX	:= $(CCACHE) $(HOSTCXX)
-endif
+export CCACHE_SLOPPINESS 		?= time_macros,include_file_mtime,file_macro,pch_defines,modules
+export CCACHE_CPP2 					?= yes
+export CCACHE_COMPILERCHECK ?= content
+export CCACHE_DEPEND				?= yes
+endif # ifneq ($(CACHE),)
 PAHOLE		= pahole
 LEX		= flex
 YACC		= bison
