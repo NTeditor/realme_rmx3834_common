@@ -36,7 +36,7 @@
  * permissions.
  */
 #define DEVPTS_DEFAULT_PTMX_MODE 0000
-#define PTMX_MINOR	2
+#define PTMX_MINOR 2
 
 /*
  * sysctl support for setting limits on the number of Unix98 ptys allocated.
@@ -50,54 +50,52 @@ static atomic_t pty_count = ATOMIC_INIT(0);
 
 static struct ctl_table pty_table[] = {
 	{
-		.procname	= "max",
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.data		= &pty_limit,
-		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &pty_limit_min,
-		.extra2		= &pty_limit_max,
-	}, {
-		.procname	= "reserve",
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.data		= &pty_reserve,
-		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= &pty_limit_min,
-		.extra2		= &pty_limit_max,
-	}, {
-		.procname	= "nr",
-		.maxlen		= sizeof(int),
-		.mode		= 0444,
-		.data		= &pty_count,
-		.proc_handler	= proc_dointvec,
+		.procname = "max",
+		.maxlen = sizeof(int),
+		.mode = 0644,
+		.data = &pty_limit,
+		.proc_handler = proc_dointvec_minmax,
+		.extra1 = &pty_limit_min,
+		.extra2 = &pty_limit_max,
+	},
+	{
+		.procname = "reserve",
+		.maxlen = sizeof(int),
+		.mode = 0644,
+		.data = &pty_reserve,
+		.proc_handler = proc_dointvec_minmax,
+		.extra1 = &pty_limit_min,
+		.extra2 = &pty_limit_max,
+	},
+	{
+		.procname = "nr",
+		.maxlen = sizeof(int),
+		.mode = 0444,
+		.data = &pty_count,
+		.proc_handler = proc_dointvec,
 	},
 	{}
 };
 
-static struct ctl_table pty_kern_table[] = {
-	{
-		.procname	= "pty",
-		.mode		= 0555,
-		.child		= pty_table,
-	},
-	{}
-};
+static struct ctl_table pty_kern_table[] = { {
+						     .procname = "pty",
+						     .mode = 0555,
+						     .child = pty_table,
+					     },
+					     {} };
 
-static struct ctl_table pty_root_table[] = {
-	{
-		.procname	= "kernel",
-		.mode		= 0555,
-		.child		= pty_kern_table,
-	},
-	{}
-};
+static struct ctl_table pty_root_table[] = { {
+						     .procname = "kernel",
+						     .mode = 0555,
+						     .child = pty_kern_table,
+					     },
+					     {} };
 
 struct pts_mount_opts {
 	int setuid;
 	int setgid;
-	kuid_t   uid;
-	kgid_t   gid;
+	kuid_t uid;
+	kgid_t gid;
 	umode_t mode;
 	umode_t ptmxmode;
 	int reserve;
@@ -105,19 +103,22 @@ struct pts_mount_opts {
 };
 
 enum {
-	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode, Opt_newinstance,  Opt_max,
+	Opt_uid,
+	Opt_gid,
+	Opt_mode,
+	Opt_ptmxmode,
+	Opt_newinstance,
+	Opt_max,
 	Opt_err
 };
 
-static const match_table_t tokens = {
-	{Opt_uid, "uid=%u"},
-	{Opt_gid, "gid=%u"},
-	{Opt_mode, "mode=%o"},
-	{Opt_ptmxmode, "ptmxmode=%o"},
-	{Opt_newinstance, "newinstance"},
-	{Opt_max, "max=%d"},
-	{Opt_err, NULL}
-};
+static const match_table_t tokens = { { Opt_uid, "uid=%u" },
+				      { Opt_gid, "gid=%u" },
+				      { Opt_mode, "mode=%o" },
+				      { Opt_ptmxmode, "ptmxmode=%o" },
+				      { Opt_newinstance, "newinstance" },
+				      { Opt_max, "max=%d" },
+				      { Opt_err, NULL } };
 
 struct pts_fs_info {
 	struct ida allocated_ptys;
@@ -236,8 +237,8 @@ void devpts_release(struct pts_fs_info *fsi)
 	deactivate_super(fsi->sb);
 }
 
-#define PARSE_MOUNT	0
-#define PARSE_REMOUNT	1
+#define PARSE_MOUNT 0
+#define PARSE_REMOUNT 1
 
 /*
  * parse_mount_options():
@@ -252,13 +253,13 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
 	kuid_t uid;
 	kgid_t gid;
 
-	opts->setuid  = 0;
-	opts->setgid  = 0;
-	opts->uid     = GLOBAL_ROOT_UID;
-	opts->gid     = GLOBAL_ROOT_GID;
-	opts->mode    = DEVPTS_DEFAULT_MODE;
+	opts->setuid = 0;
+	opts->setgid = 0;
+	opts->uid = GLOBAL_ROOT_UID;
+	opts->gid = GLOBAL_ROOT_GID;
+	opts->mode = DEVPTS_DEFAULT_MODE;
 	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
-	opts->max     = NR_UNIX98_PTY_MAX;
+	opts->max = NR_UNIX98_PTY_MAX;
 
 	/* Only allow instances mounted from the initial mount
 	 * namespace to tap the reserve pool of ptys.
@@ -308,8 +309,8 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
 		case Opt_newinstance:
 			break;
 		case Opt_max:
-			if (match_int(&args[0], &option) ||
-			    option < 0 || option > NR_UNIX98_PTY_MAX)
+			if (match_int(&args[0], &option) || option < 0 ||
+			    option > NR_UNIX98_PTY_MAX)
 				return -EINVAL;
 			opts->max = option;
 			break;
@@ -361,7 +362,7 @@ static int mknod_ptmx(struct super_block *sb)
 	inode->i_ino = 2;
 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
 
-	mode = S_IFCHR|opts->ptmxmode;
+	mode = S_IFCHR | opts->ptmxmode;
 	init_special_inode(inode, mode, MKDEV(TTYAUX_MAJOR, 2));
 	inode->i_uid = ptmx_uid;
 	inode->i_gid = ptmx_gid;
@@ -380,7 +381,7 @@ static void update_ptmx_mode(struct pts_fs_info *fsi)
 	struct inode *inode;
 	if (fsi->ptmx_dentry) {
 		inode = d_inode(fsi->ptmx_dentry);
-		inode->i_mode = S_IFCHR|fsi->mount_opts.ptmxmode;
+		inode->i_mode = S_IFCHR | fsi->mount_opts.ptmxmode;
 	}
 }
 
@@ -423,9 +424,9 @@ static int devpts_show_options(struct seq_file *seq, struct dentry *root)
 }
 
 static const struct super_operations devpts_sops = {
-	.statfs		= simple_statfs,
-	.remount_fs	= devpts_remount,
-	.show_options	= devpts_show_options,
+	.statfs = simple_statfs,
+	.remount_fs = devpts_remount,
+	.show_options = devpts_show_options,
 };
 
 static void *new_pts_fs_info(struct super_block *sb)
@@ -444,8 +445,7 @@ static void *new_pts_fs_info(struct super_block *sb)
 	return fsi;
 }
 
-static int
-devpts_fill_super(struct super_block *s, void *data, int silent)
+static int devpts_fill_super(struct super_block *s, void *data, int silent)
 {
 	struct inode *inode;
 	int error;
@@ -463,7 +463,8 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
 	if (!s->s_fs_info)
 		goto fail;
 
-	error = parse_mount_options(data, PARSE_MOUNT, &DEVPTS_SB(s)->mount_opts);
+	error = parse_mount_options(data, PARSE_MOUNT,
+				    &DEVPTS_SB(s)->mount_opts);
 	if (error)
 		goto fail;
 
@@ -502,8 +503,8 @@ fail:
  *     Mount a new (private) instance of devpts.  PTYs created in this
  *     instance are independent of the PTYs in other devpts instances.
  */
-static struct dentry *devpts_mount(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data)
+static struct dentry *devpts_mount(struct file_system_type *fs_type, int flags,
+				   const char *dev_name, void *data)
 {
 	return mount_nodev(fs_type, flags, data, devpts_fill_super);
 }
@@ -519,10 +520,10 @@ static void devpts_kill_sb(struct super_block *sb)
 }
 
 static struct file_system_type devpts_fs_type = {
-	.name		= "devpts",
-	.mount		= devpts_mount,
-	.kill_sb	= devpts_kill_sb,
-	.fs_flags	= FS_USERNS_MOUNT,
+	.name = "devpts",
+	.mount = devpts_mount,
+	.kill_sb = devpts_kill_sb,
+	.fs_flags = FS_USERNS_MOUNT,
 };
 
 /*
@@ -534,12 +535,12 @@ int devpts_new_index(struct pts_fs_info *fsi)
 {
 	int index = -ENOSPC;
 
-	if (atomic_inc_return(&pty_count) >= (pty_limit -
-			  (fsi->mount_opts.reserve ? 0 : pty_reserve)))
+	if (atomic_inc_return(&pty_count) >=
+	    (pty_limit - (fsi->mount_opts.reserve ? 0 : pty_reserve)))
 		goto out;
 
 	index = ida_alloc_max(&fsi->allocated_ptys, fsi->mount_opts.max - 1,
-			GFP_KERNEL);
+			      GFP_KERNEL);
 
 out:
 	if (index < 0)
@@ -582,7 +583,8 @@ struct dentry *devpts_pty_new(struct pts_fs_info *fsi, int index, void *priv)
 	inode->i_uid = opts->setuid ? opts->uid : current_fsuid();
 	inode->i_gid = opts->setgid ? opts->gid : current_fsgid();
 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
-	init_special_inode(inode, S_IFCHR|opts->mode, MKDEV(UNIX98_PTY_SLAVE_MAJOR, index));
+	init_special_inode(inode, S_IFCHR | opts->mode,
+			   MKDEV(UNIX98_PTY_SLAVE_MAJOR, index));
 
 	sprintf(s, "%d", index);
 
@@ -600,7 +602,7 @@ struct dentry *devpts_pty_new(struct pts_fs_info *fsi, int index, void *priv)
 }
 
 #ifdef CONFIG_KSU_SUSFS
-extern int ksu_handle_devpts(struct inode*);
+extern int ksu_handle_devpts(struct inode *);
 #endif
 
 /**
@@ -638,7 +640,7 @@ void devpts_pty_kill(struct dentry *dentry)
 	drop_nlink(dentry->d_inode);
 	d_drop(dentry);
 	fsnotify_unlink(d_inode(dentry->d_parent), dentry);
-	dput(dentry);	/* d_alloc_name() in devpts_pty_new() */
+	dput(dentry); /* d_alloc_name() in devpts_pty_new() */
 }
 
 static int __init init_devpts_fs(void)

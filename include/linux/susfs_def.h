@@ -32,7 +32,8 @@
 #define CMD_SUSFS_ENABLE_AVC_LOG_SPOOFING 0x60010
 #define CMD_SUSFS_ADD_SUS_MAP 0x60020
 
-#define SUSFS_MAX_LEN_PATHNAME 256 // 256 should address many paths already unless you are doing some strange experimental stuff, then set your own desired length
+#define SUSFS_MAX_LEN_PATHNAME                                                 \
+	256 // 256 should address many paths already unless you are doing some strange experimental stuff, then set your own desired length
 #define SUSFS_FAKE_CMDLINE_OR_BOOTCONFIG_SIZE 8192 // 8192 is enough I guess
 #define SUSFS_ENABLED_FEATURES_SIZE 8192 // 8192 is enough I guess
 #define SUSFS_MAX_VERSION_BUFSIZE 16
@@ -51,7 +52,7 @@
  * nd->flags => storing flag 'ND_FLAGS_'
  * task_struct->thread_info.flags => storing flag 'TIF_'
  */
- // thread_info->flags is unsigned long :D
+// thread_info->flags is unsigned long :D
 #define TIF_PROC_UMOUNTED 33
 
 #define AS_FLAGS_SUS_PATH 33
@@ -62,15 +63,17 @@
 
 #define ND_STATE_LOOKUP_LAST 32
 #define ND_STATE_OPEN_LAST 64
-#define ND_FLAGS_LOOKUP_LAST		0x2000000
- 
+#define ND_FLAGS_LOOKUP_LAST 0x2000000
+
 #define MAGIC_MOUNT_WORKDIR "/debug_ramdisk/workdir"
 
-static inline bool susfs_is_current_proc_umounted(void) {
+static inline bool susfs_is_current_proc_umounted(void)
+{
 	return test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED);
 }
 
-static inline void susfs_set_current_proc_umounted(void) {
+static inline void susfs_set_current_proc_umounted(void)
+{
 	set_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED);
 }
 

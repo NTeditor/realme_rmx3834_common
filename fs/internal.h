@@ -40,7 +40,7 @@ static inline int __sync_blockdev(struct block_device *bdev, int wait)
  */
 extern void guard_bio_eod(struct bio *bio);
 extern int __block_write_begin_int(struct page *page, loff_t pos, unsigned len,
-		get_block_t *get_block, struct iomap *iomap);
+				   get_block_t *get_block, struct iomap *iomap);
 
 /*
  * char_dev.c
@@ -60,9 +60,10 @@ extern int finish_clean_context(struct fs_context *fc);
  */
 extern int filename_lookup(int dfd, struct filename *name, unsigned flags,
 			   struct path *path, struct path *root);
-extern int user_path_mountpoint_at(int, const char __user *, unsigned int, struct path *);
-extern int vfs_path_lookup(struct dentry *, struct vfsmount *,
-			   const char *, unsigned int, struct path *);
+extern int user_path_mountpoint_at(int, const char __user *, unsigned int,
+				   struct path *);
+extern int vfs_path_lookup(struct dentry *, struct vfsmount *, const char *,
+			   unsigned int, struct path *);
 long do_mknodat(int dfd, const char __user *filename, umode_t mode,
 		unsigned int dev);
 long do_mkdirat(int dfd, const char __user *pathname, umode_t mode);
@@ -123,9 +124,9 @@ struct open_flags {
 	int lookup_flags;
 };
 extern struct file *do_filp_open(int dfd, struct filename *pathname,
-		const struct open_flags *op);
+				 const struct open_flags *op);
 extern struct file *do_file_open_root(struct dentry *, struct vfsmount *,
-		const char *, const struct open_flags *);
+				      const char *, const struct open_flags *);
 
 long do_sys_ftruncate(unsigned int fd, loff_t length, int small);
 long do_faccessat(int dfd, const char __user *filename, int mode);
@@ -159,7 +160,7 @@ extern struct dentry *__d_alloc(struct super_block *, const struct qstr *);
 extern int d_set_mounted(struct dentry *dentry);
 extern long prune_dcache_sb(struct super_block *sb, struct shrink_control *sc);
 extern struct dentry *d_alloc_cursor(struct dentry *);
-extern struct dentry * d_alloc_pseudo(struct super_block *, const struct qstr *);
+extern struct dentry *d_alloc_pseudo(struct super_block *, const struct qstr *);
 extern char *simple_dname(struct dentry *, char *, int);
 extern void dput_to_list(struct dentry *, struct list_head *);
 extern void shrink_dentry_list(struct list_head *);
@@ -189,7 +190,7 @@ extern const struct dentry_operations ns_dentry_operations;
  * fs/ioctl.c
  */
 extern int do_vfs_ioctl(struct file *file, unsigned int fd, unsigned int cmd,
-		    unsigned long arg);
+			unsigned long arg);
 
 /* direct-io.c: */
 int sb_init_dio_done_wq(struct super_block *sb);

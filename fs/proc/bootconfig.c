@@ -46,7 +46,8 @@ static int __init copy_xbc_key_value_list(char *dst, size_t size)
 	if (!key)
 		return -ENOMEM;
 
-	xbc_for_each_key_value(leaf, val) {
+	xbc_for_each_key_value(leaf, val)
+	{
 		ret = xbc_node_compose_key(leaf, key, XBC_KEYLEN_MAX);
 		if (ret < 0)
 			break;
@@ -56,13 +57,16 @@ static int __init copy_xbc_key_value_list(char *dst, size_t size)
 		dst += ret;
 		vnode = xbc_node_get_child(leaf);
 		if (vnode) {
-			xbc_array_for_each_value(vnode, val) {
+			xbc_array_for_each_value(vnode, val)
+			{
 				if (strchr(val, '"'))
 					q = '\'';
 				else
 					q = '"';
 				ret = snprintf(dst, rest(dst, end), "%c%s%c%s",
-					q, val, q, xbc_node_is_array(vnode) ? ", " : "\n");
+					       q, val, q,
+					       xbc_node_is_array(vnode) ? ", " :
+										"\n");
 				if (ret < 0)
 					goto out;
 				dst += ret;

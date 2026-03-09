@@ -112,9 +112,7 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	if (susfs_hide_sus_mnts_for_non_su_procs &&
-		r->mnt_id >= DEFAULT_KSU_MNT_ID &&
-		!susfs_is_current_ksu_domain())
-	{
+	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
 		return 0;
 	}
 #endif
@@ -155,9 +153,7 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	if (susfs_hide_sus_mnts_for_non_su_procs &&
-		r->mnt_id >= DEFAULT_KSU_MNT_ID &&
-		!susfs_is_current_ksu_domain())
-	{
+	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
 		return 0;
 	}
 #endif
@@ -226,9 +222,7 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	if (susfs_hide_sus_mnts_for_non_su_procs &&
-		r->mnt_id >= DEFAULT_KSU_MNT_ID &&
-		!susfs_is_current_ksu_domain())
-	{
+	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
 		return 0;
 	}
 #endif
@@ -318,11 +312,11 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 
 	return 0;
 
- err_put_path:
+err_put_path:
 	path_put(&root);
- err_put_ns:
+err_put_ns:
 	put_mnt_ns(ns);
- err:
+err:
 	return ret;
 }
 
@@ -351,24 +345,24 @@ static int mountstats_open(struct inode *inode, struct file *file)
 }
 
 const struct file_operations proc_mounts_operations = {
-	.open		= mounts_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= mounts_release,
-	.poll		= mounts_poll,
+	.open = mounts_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = mounts_release,
+	.poll = mounts_poll,
 };
 
 const struct file_operations proc_mountinfo_operations = {
-	.open		= mountinfo_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= mounts_release,
-	.poll		= mounts_poll,
+	.open = mountinfo_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = mounts_release,
+	.poll = mounts_poll,
 };
 
 const struct file_operations proc_mountstats_operations = {
-	.open		= mountstats_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= mounts_release,
+	.open = mountstats_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = mounts_release,
 };
