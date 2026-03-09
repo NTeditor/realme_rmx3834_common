@@ -17,17 +17,18 @@
 #include <linux/syscalls.h>
 #include <linux/pagemap.h>
 #include <linux/compat.h>
-#ifdef CONFIG_KSU_SUSFS
-#include <linux/susfs_def.h>
-#include <linux/version.h>
-#endif
-
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
 #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+#include <linux/susfs_def.h>
 extern void susfs_sus_ino_for_generic_fillattr(unsigned long ino,
 					       struct kstat *stat);
+#endif
+
+#ifdef CONFIG_KSU_MANUAL_HOOK
+extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
+			   int *flags);
 #endif
 
 /**
@@ -185,36 +186,12 @@ EXPORT_SYMBOL(vfs_statx_fd);
  *
  * 0 will be returned on success, and a -ve error code if unsuccessful.
  */
-#ifdef CONFIG_KSU_MANUAL_HOOK
-extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
-			   int *flags);
-#endif // ifdef CONFIG_KSU_MANUAL_HOOK
-#ifdef CONFIG_KSU_SUSFS
-extern bool ksu_su_compat_enabled __read_mostly;
-extern bool __ksu_is_allow_uid_for_current(uid_t uid);
-#endif
 int vfs_statx(int dfd, const char __user *filename, int flags,
 	      struct kstat *stat, u32 request_mask)
 {
 	struct path path;
 	int error = -EINVAL;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
-
-#if defined(CONFIG_KSU_MANUAL_HOOK) && !defined(CONFIG_KSU_SUSFS)
-	ksu_handle_stat(&dfd, &filename, &flags);
-#endif // ifdef CONFIG_KSU_MANUAL_HOOK
-#ifdef CONFIG_KSU_SUSFS
-	if (likely(susfs_is_current_proc_umounted()) ||
-	    !ksu_su_compat_enabled) {
-		goto orig_flow;
-	}
-
-	if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val))) {
-		ksu_handle_stat(&dfd, &filename, &flags);
-	}
-
-orig_flow:
-#endif
 
 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH |
 		       KSTAT_QUERY_FLAGS)) != 0)
@@ -410,6 +387,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
+	ksu_handle_stat(&dfd, &filename, &flag);
+#endif
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
 		return error;
@@ -424,7 +404,6 @@ SYSCALL_DEFINE2(newfstat, unsigned int, fd, struct stat __user *, statbuf)
 
 	if (!error)
 		error = cp_new_stat(&stat, statbuf);
-
 	return error;
 }
 #endif
@@ -560,6 +539,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
 	struct kstat stat;
 	int error;
 
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
+	ksu_handle_stat(&dfd, &filename, &flag);
+#endif
 	error = vfs_fstatat(dfd, filename, &stat, flag);
 	if (error)
 		return error;
