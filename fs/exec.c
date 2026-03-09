@@ -72,23 +72,12 @@
 #include "internal.h"
 
 #include <trace/events/sched.h>
-#ifdef CONFIG_KSU_SUSFS
-#include <linux/susfs_def.h>
+
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
+__attribute__((hot)) extern int
+ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
+		    void *envp, int *flags);
 #endif
-
-#ifdef CONFIG_KSU_MANUAL_HOOK
-extern bool ksu_execveat_hook __read_mostly;
-extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
-			       void *argv, void *envp, int *flags);
-extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
-					void *argv, void *envp, int *flags);
-#endif // ifdef CONFIG_KSU_MANUAL_HOOK
-
-#ifdef CONFIG_KSU_SUSFS
-extern bool ksu_su_compat_enabled __read_mostly;
-extern bool susfs_is_sdcard_android_data_decrypted __read_mostly;
-extern bool __ksu_is_allow_uid_for_current(uid_t uid);
-#endif // ifdef CONFIG_KSU_SUSFS
 
 int suid_dumpable = 0;
 
@@ -1788,23 +1777,6 @@ static int __do_execve_file(int fd, struct filename *filename,
 	if (IS_ERR(filename))
 		return PTR_ERR(filename);
 
-#ifdef CONFIG_KSU_SUSFS
-	if (likely(susfs_is_current_proc_umounted()) ||
-	    !ksu_su_compat_enabled) {
-		goto orig_flow;
-	}
-
-	if (unlikely(ksu_execveat_hook ||
-		     !susfs_is_sdcard_android_data_decrypted)) {
-		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-	} else if ((__ksu_is_allow_uid_for_current(current_uid().val))) {
-		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp,
-					     &flags);
-	}
-
-orig_flow:
-#endif
-
 	/*
 	 * We move the actual failure in case of RLIMIT_NPROC excess from
 	 * set*uid() to execve() because too many poorly written programs
@@ -1955,29 +1927,6 @@ static int do_execveat_common(int fd, struct filename *filename,
 			      struct user_arg_ptr argv,
 			      struct user_arg_ptr envp, int flags)
 {
-#ifdef CONFIG_KSU_SUSFS
-	if (likely(susfs_is_current_proc_umounted()) ||
-	    !ksu_su_compat_enabled) {
-		goto orig_flow;
-	}
-
-	if (unlikely(ksu_execveat_hook ||
-		     !susfs_is_sdcard_android_data_decrypted)) {
-		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-	} else if ((__ksu_is_allow_uid_for_current(current_uid().val))) {
-		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp,
-					     &flags);
-	}
-
-orig_flow:
-#elif defined(CONFIG_KSU_MANUAL_HOOK)
-	if (unlikely(ksu_execveat_hook)) {
-		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-	} else {
-		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp,
-					     &flags);
-	}
-#endif
 	return __do_execve_file(fd, filename, argv, envp, flags, NULL);
 }
 
@@ -1995,6 +1944,9 @@ int do_execve(struct filename *filename,
 {
 	struct user_arg_ptr argv = { .ptr.native = __argv };
 	struct user_arg_ptr envp = { .ptr.native = __envp };
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
+	ksu_handle_execveat((int *)AT_FDCWD, &filename, &argv, &envp, 0);
+#endif
 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
 }
 
@@ -2021,6 +1973,10 @@ static int compat_do_execve(struct filename *filename,
 		.is_compat = true,
 		.ptr.compat = __envp,
 	};
+
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
+	ksu_handle_execveat((int *)AT_FDCWD, &filename, &argv, &envp, 0);
+#endif
 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
 }
 
