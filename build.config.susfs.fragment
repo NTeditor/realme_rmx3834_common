@@ -1,0 +1,11 @@
+# vim: ft=bash:
+POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && update_config_susfs"
+
+function update_config_susfs() {
+	${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+		-e CONFIG_KSU_SUSFS \
+		-d CONFIG_KSU_SUSFS_TRY_UMOUNT
+
+	(cd ${OUT_DIR} &&
+		make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+}
