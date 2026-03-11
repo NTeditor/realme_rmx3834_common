@@ -1,23 +1,25 @@
 # vim: ft=bash:
 . ${ROOT_DIR}/${KERNEL_DIR}/build.config.common
 . ${ROOT_DIR}/${KERNEL_DIR}/build.config.aarch64
+SKIP_MRPROPER=1
 
 DEFCONFIG=rmx3834_defconfig
 POST_DEFCONFIG_CMDS="check_defconfig && update_config"
-SKIP_MRPROPER=1
 
 function update_config() {
-  ${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
-    -d CONFIG_MODULE_SIG \
-    -d CONFIG_MODULE_SIG_ALL \
-    -d CONFIG_MODULE_SIG_FORCE \
-    -e CONFIG_TMPFS_XATTR \
-    -e CONFIG_TMPFS_POSIX_ACL \
-    -e CONFIG_USER_NS \
-    -e CONFIG_PID_NS \
-    -e CONFIG_KSU_MANUAL_HOOK \
-    -d CONFIG_KSU_SUSFS_TRY_UMOUNT
+	${KERNEL_DIR}/scripts/config --file ${OUT_DIR}/.config \
+		-d CONFIG_MODULE_SIG \
+		-d CONFIG_MODULE_SIG_ALL \
+		-d CONFIG_MODULE_SIG_FORCE \
+		-e CONFIG_TMPFS_XATTR \
+		-e CONFIG_TMPFS_POSIX_ACL \
+		-e CONFIG_USER_NS \
+		-e CONFIG_PID_NS \
+		-e CONFIG_KSU_MANUAL_HOOK \
+		-d CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK \
+		-e CONFIG_KSU_SUSFS \
+		-d CONFIG_KSU_SUSFS_TRY_UMOUNT
 
-  (cd ${OUT_DIR} &&
-    make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
+	(cd ${OUT_DIR} &&
+		make O=${OUT_DIR} $archsubarch CROSS_COMPILE=${CROSS_COMPILE} "${TOOL_ARGS[@]}" ${MAKE_ARGS} olddefconfig)
 }
