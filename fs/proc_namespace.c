@@ -12,19 +12,11 @@
 #include <linux/security.h>
 #include <linux/fs_struct.h>
 #include <linux/sched/task.h>
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-#include <linux/susfs_def.h>
-#endif
 
 #include "proc/internal.h" /* only for get_proc_task() in ->open() */
 
 #include "pnode.h"
 #include "internal.h"
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-extern bool susfs_hide_sus_mnts_for_non_su_procs;
-extern bool susfs_is_current_ksu_domain(void);
-#endif
 
 static __poll_t mounts_poll(struct file *file, poll_table *wait)
 {
@@ -110,13 +102,6 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
 
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_hide_sus_mnts_for_non_su_procs &&
-	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
-		return 0;
-	}
-#endif
-
 	if (sb->s_op->show_devname) {
 		err = sb->s_op->show_devname(m, mnt_path.dentry);
 		if (err)
@@ -150,13 +135,6 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 	struct super_block *sb = mnt->mnt_sb;
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	int err;
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_hide_sus_mnts_for_non_su_procs &&
-	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
-		return 0;
-	}
-#endif
 
 	seq_printf(m, "%i %i %u:%u ", r->mnt_id, r->mnt_parent->mnt_id,
 		   MAJOR(sb->s_dev), MINOR(sb->s_dev));
@@ -219,13 +197,6 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_hide_sus_mnts_for_non_su_procs &&
-	    r->mnt_id >= DEFAULT_KSU_MNT_ID && !susfs_is_current_ksu_domain()) {
-		return 0;
-	}
-#endif
 
 	/* device */
 	if (sb->s_op->show_devname) {
@@ -312,11 +283,11 @@ static int mounts_open_common(struct inode *inode, struct file *file,
 
 	return 0;
 
-err_put_path:
+ err_put_path:
 	path_put(&root);
-err_put_ns:
+ err_put_ns:
 	put_mnt_ns(ns);
-err:
+ err:
 	return ret;
 }
 
@@ -345,24 +316,24 @@ static int mountstats_open(struct inode *inode, struct file *file)
 }
 
 const struct file_operations proc_mounts_operations = {
-	.open = mounts_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = mounts_release,
-	.poll = mounts_poll,
+	.open		= mounts_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= mounts_release,
+	.poll		= mounts_poll,
 };
 
 const struct file_operations proc_mountinfo_operations = {
-	.open = mountinfo_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = mounts_release,
-	.poll = mounts_poll,
+	.open		= mountinfo_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= mounts_release,
+	.poll		= mounts_poll,
 };
 
 const struct file_operations proc_mountstats_operations = {
-	.open = mountstats_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = mounts_release,
+	.open		= mountstats_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= mounts_release,
 };

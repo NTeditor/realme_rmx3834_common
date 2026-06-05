@@ -24,17 +24,13 @@
 
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
-#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
-extern bool ksu_init_rc_hook __read_mostly;
-extern __attribute__((cold)) int
-ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr, size_t *count_ptr);
-#endif
+
 
 const struct file_operations generic_ro_fops = {
-	.llseek = generic_file_llseek,
-	.read_iter = generic_file_read_iter,
-	.mmap = generic_file_readonly_mmap,
-	.splice_read = generic_file_splice_read,
+	.llseek		= generic_file_llseek,
+	.read_iter	= generic_file_read_iter,
+	.mmap		= generic_file_readonly_mmap,
+	.splice_read	= generic_file_splice_read,
 };
 
 EXPORT_SYMBOL(generic_ro_fops);
@@ -87,8 +83,9 @@ EXPORT_SYMBOL(vfs_setpos);
  * SEEK_CUR is synchronized against other SEEK_CURs, but not read/writes.
  * read/writes behave like SEEK_SET against seeks.
  */
-loff_t generic_file_llseek_size(struct file *file, loff_t offset, int whence,
-				loff_t maxsize, loff_t eof)
+loff_t
+generic_file_llseek_size(struct file *file, loff_t offset, int whence,
+		loff_t maxsize, loff_t eof)
 {
 	switch (whence) {
 	case SEEK_END:
@@ -163,15 +160,12 @@ EXPORT_SYMBOL(generic_file_llseek);
  * @size:	size of the file
  *
  */
-loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence,
-			 loff_t size)
+loff_t fixed_size_llseek(struct file *file, loff_t offset, int whence, loff_t size)
 {
 	switch (whence) {
-	case SEEK_SET:
-	case SEEK_CUR:
-	case SEEK_END:
-		return generic_file_llseek_size(file, offset, whence, size,
-						size);
+	case SEEK_SET: case SEEK_CUR: case SEEK_END:
+		return generic_file_llseek_size(file, offset, whence,
+						size, size);
 	default:
 		return -EINVAL;
 	}
@@ -188,8 +182,7 @@ EXPORT_SYMBOL(fixed_size_llseek);
 loff_t no_seek_end_llseek(struct file *file, loff_t offset, int whence)
 {
 	switch (whence) {
-	case SEEK_SET:
-	case SEEK_CUR:
+	case SEEK_SET: case SEEK_CUR:
 		return generic_file_llseek_size(file, offset, whence,
 						OFFSET_MAX, 0);
 	default:
@@ -206,13 +199,12 @@ EXPORT_SYMBOL(no_seek_end_llseek);
  * @size:	maximal offset allowed
  *
  */
-loff_t no_seek_end_llseek_size(struct file *file, loff_t offset, int whence,
-			       loff_t size)
+loff_t no_seek_end_llseek_size(struct file *file, loff_t offset, int whence, loff_t size)
 {
 	switch (whence) {
-	case SEEK_SET:
-	case SEEK_CUR:
-		return generic_file_llseek_size(file, offset, whence, size, 0);
+	case SEEK_SET: case SEEK_CUR:
+		return generic_file_llseek_size(file, offset, whence,
+						size, 0);
 	default:
 		return -EINVAL;
 	}
@@ -249,39 +241,39 @@ loff_t default_llseek(struct file *file, loff_t offset, int whence)
 
 	inode_lock(inode);
 	switch (whence) {
-	case SEEK_END:
-		offset += i_size_read(inode);
-		break;
-	case SEEK_CUR:
-		if (offset == 0) {
-			retval = file->f_pos;
-			goto out;
-		}
-		offset += file->f_pos;
-		break;
-	case SEEK_DATA:
-		/*
+		case SEEK_END:
+			offset += i_size_read(inode);
+			break;
+		case SEEK_CUR:
+			if (offset == 0) {
+				retval = file->f_pos;
+				goto out;
+			}
+			offset += file->f_pos;
+			break;
+		case SEEK_DATA:
+			/*
 			 * In the generic case the entire file is data, so as
 			 * long as offset isn't at the end of the file then the
 			 * offset is data.
 			 */
-		if (offset >= inode->i_size) {
-			retval = -ENXIO;
-			goto out;
-		}
-		break;
-	case SEEK_HOLE:
-		/*
+			if (offset >= inode->i_size) {
+				retval = -ENXIO;
+				goto out;
+			}
+			break;
+		case SEEK_HOLE:
+			/*
 			 * There is a virtual hole at the end of the file, so
 			 * as long as offset isn't i_size or larger, return
 			 * i_size.
 			 */
-		if (offset >= inode->i_size) {
-			retval = -ENXIO;
-			goto out;
-		}
-		offset = inode->i_size;
-		break;
+			if (offset >= inode->i_size) {
+				retval = -ENXIO;
+				goto out;
+			}
+			offset = inode->i_size;
+			break;
 	}
 	retval = -EINVAL;
 	if (offset >= 0 || unsigned_offsets(file)) {
@@ -322,8 +314,7 @@ off_t ksys_lseek(unsigned int fd, off_t offset, unsigned int whence)
 		loff_t res = vfs_llseek(f.file, offset, whence);
 		retval = res;
 		if (res != (loff_t)retval)
-			retval =
-				-EOVERFLOW; /* LFS: should only happen on 32 bit platforms */
+			retval = -EOVERFLOW;	/* LFS: should only happen on 32 bit platforms */
 	}
 	fdput_pos(f);
 	return retval;
@@ -335,8 +326,7 @@ SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 }
 
 #ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE3(lseek, unsigned int, fd, compat_off_t, offset,
-		       unsigned int, whence)
+COMPAT_SYSCALL_DEFINE3(lseek, unsigned int, fd, compat_off_t, offset, unsigned int, whence)
 {
 	return ksys_lseek(fd, offset, whence);
 }
@@ -358,8 +348,8 @@ SYSCALL_DEFINE5(llseek, unsigned int, fd, unsigned long, offset_high,
 	if (whence > SEEK_MAX)
 		goto out_putf;
 
-	offset = vfs_llseek(f.file, ((loff_t)offset_high << 32) | offset_low,
-			    whence);
+	offset = vfs_llseek(f.file, ((loff_t) offset_high << 32) | offset_low,
+			whence);
 
 	retval = (int)offset;
 	if (offset >= 0) {
@@ -373,14 +363,13 @@ out_putf:
 }
 #endif
 
-int rw_verify_area(int read_write, struct file *file, const loff_t *ppos,
-		   size_t count)
+int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t count)
 {
 	struct inode *inode;
 	int retval = -EINVAL;
 
 	inode = file_inode(file);
-	if (unlikely((ssize_t)count < 0))
+	if (unlikely((ssize_t) count < 0))
 		return retval;
 
 	/*
@@ -395,26 +384,24 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos,
 				return retval;
 			if (count >= -pos) /* both values are in 0..LLONG_MAX */
 				return -EOVERFLOW;
-		} else if (unlikely((loff_t)(pos + count) < 0)) {
+		} else if (unlikely((loff_t) (pos + count) < 0)) {
 			if (!unsigned_offsets(file))
 				return retval;
 		}
 
 		if (unlikely(inode->i_flctx && mandatory_lock(inode))) {
-			retval = locks_mandatory_area(
-				inode, file, pos, pos + count - 1,
-				read_write == READ ? F_RDLCK : F_WRLCK);
+			retval = locks_mandatory_area(inode, file, pos, pos + count - 1,
+					read_write == READ ? F_RDLCK : F_WRLCK);
 			if (retval < 0)
 				return retval;
 		}
 	}
 
-	return security_file_permission(file, read_write == READ ? MAY_READ :
-									 MAY_WRITE);
+	return security_file_permission(file,
+				read_write == READ ? MAY_READ : MAY_WRITE);
 }
 
-static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len,
-			     loff_t *ppos)
+static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, loff_t *ppos)
 {
 	struct iovec iov = { .iov_base = buf, .iov_len = len };
 	struct kiocb kiocb;
@@ -471,7 +458,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	ret = rw_verify_area(READ, file, pos, count);
 	if (!ret) {
 		if (count > MAX_RW_COUNT)
-			count = MAX_RW_COUNT;
+			count =  MAX_RW_COUNT;
 		ret = __vfs_read(file, buf, count, pos);
 		if (ret > 0) {
 			fsnotify_access(file);
@@ -483,8 +470,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	return ret;
 }
 
-static ssize_t new_sync_write(struct file *filp, const char __user *buf,
-			      size_t len, loff_t *ppos)
+static ssize_t new_sync_write(struct file *filp, const char __user *buf, size_t len, loff_t *ppos)
 {
 	struct iovec iov = { .iov_base = (void __user *)buf, .iov_len = len };
 	struct kiocb kiocb;
@@ -513,8 +499,7 @@ static ssize_t __vfs_write(struct file *file, const char __user *p,
 		return -EINVAL;
 }
 
-ssize_t __kernel_write(struct file *file, const void *buf, size_t count,
-		       loff_t *pos)
+ssize_t __kernel_write(struct file *file, const void *buf, size_t count, loff_t *pos)
 {
 	mm_segment_t old_fs;
 	const char __user *p;
@@ -527,7 +512,7 @@ ssize_t __kernel_write(struct file *file, const void *buf, size_t count,
 	set_fs(KERNEL_DS);
 	p = (__force const char __user *)buf;
 	if (count > MAX_RW_COUNT)
-		count = MAX_RW_COUNT;
+		count =  MAX_RW_COUNT;
 	ret = __vfs_write(file, p, count, pos);
 	set_fs(old_fs);
 	if (ret > 0) {
@@ -540,7 +525,7 @@ ssize_t __kernel_write(struct file *file, const void *buf, size_t count,
 EXPORT_SYMBOL(__kernel_write);
 
 ssize_t kernel_write(struct file *file, const void *buf, size_t count,
-		     loff_t *pos)
+			    loff_t *pos)
 {
 	mm_segment_t old_fs;
 	ssize_t res;
@@ -555,8 +540,7 @@ ssize_t kernel_write(struct file *file, const void *buf, size_t count,
 }
 EXPORT_SYMBOL(kernel_write);
 
-ssize_t vfs_write(struct file *file, const char __user *buf, size_t count,
-		  loff_t *pos)
+ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
 #if defined(CONFIG_SPRD_DEBUG)
@@ -573,7 +557,7 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count,
 	ret = rw_verify_area(WRITE, file, pos, count);
 	if (!ret) {
 		if (count > MAX_RW_COUNT)
-			count = MAX_RW_COUNT;
+			count =  MAX_RW_COUNT;
 		file_start_write(file);
 		ret = __vfs_write(file, buf, count, pos);
 		if (ret > 0) {
@@ -619,11 +603,6 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU_SUSFS)
-	if (unlikely(ksu_init_rc_hook))
-		ksu_handle_sys_read(fd, &buf, &count);
-#endif
-
 	return ksys_read(fd, buf, count);
 }
 
@@ -647,8 +626,8 @@ ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count)
 	return ret;
 }
 
-SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf, size_t,
-		count)
+SYSCALL_DEFINE3(write, unsigned int, fd, const char __user *, buf,
+		size_t, count)
 {
 	return ksys_write(fd, buf, count);
 }
@@ -673,14 +652,14 @@ ssize_t ksys_pread64(unsigned int fd, char __user *buf, size_t count,
 	return ret;
 }
 
-SYSCALL_DEFINE4(pread64, unsigned int, fd, char __user *, buf, size_t, count,
-		loff_t, pos)
+SYSCALL_DEFINE4(pread64, unsigned int, fd, char __user *, buf,
+			size_t, count, loff_t, pos)
 {
 	return ksys_pread64(fd, buf, count, pos);
 }
 
-ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf, size_t count,
-		      loff_t pos)
+ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf,
+		      size_t count, loff_t pos)
 {
 	struct fd f;
 	ssize_t ret = -EBADF;
@@ -691,7 +670,7 @@ ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf, size_t count,
 	f = fdget(fd);
 	if (f.file) {
 		ret = -ESPIPE;
-		if (f.file->f_mode & FMODE_PWRITE)
+		if (f.file->f_mode & FMODE_PWRITE)  
 			ret = vfs_write(f.file, buf, count, &pos);
 		fdput(f);
 	}
@@ -699,14 +678,14 @@ ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf, size_t count,
 	return ret;
 }
 
-SYSCALL_DEFINE4(pwrite64, unsigned int, fd, const char __user *, buf, size_t,
-		count, loff_t, pos)
+SYSCALL_DEFINE4(pwrite64, unsigned int, fd, const char __user *, buf,
+			 size_t, count, loff_t, pos)
 {
 	return ksys_pwrite64(fd, buf, count, pos);
 }
 
 static ssize_t do_iter_readv_writev(struct file *filp, struct iov_iter *iter,
-				    loff_t *ppos, int type, rwf_t flags)
+		loff_t *ppos, int type, rwf_t flags)
 {
 	struct kiocb kiocb;
 	ssize_t ret;
@@ -729,7 +708,7 @@ static ssize_t do_iter_readv_writev(struct file *filp, struct iov_iter *iter,
 
 /* Do it by hand, with file-ops */
 static ssize_t do_loop_readv_writev(struct file *filp, struct iov_iter *iter,
-				    loff_t *ppos, int type, rwf_t flags)
+		loff_t *ppos, int type, rwf_t flags)
 {
 	ssize_t ret = 0;
 
@@ -791,7 +770,7 @@ static ssize_t do_loop_readv_writev(struct file *filp, struct iov_iter *iter,
  * Return: The total number of bytes covered by the iovec array on success
  *   or a negative error code on error.
  */
-ssize_t rw_copy_check_uvector(int type, const struct iovec __user *uvector,
+ssize_t rw_copy_check_uvector(int type, const struct iovec __user * uvector,
 			      unsigned long nr_segs, unsigned long fast_segs,
 			      struct iovec *fast_pointer,
 			      struct iovec **ret_pointer)
@@ -825,7 +804,7 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user *uvector,
 			goto out;
 		}
 	}
-	if (copy_from_user(iov, uvector, nr_segs * sizeof(*uvector))) {
+	if (copy_from_user(iov, uvector, nr_segs*sizeof(*uvector))) {
 		ret = -EFAULT;
 		goto out;
 	}
@@ -850,7 +829,8 @@ ssize_t rw_copy_check_uvector(int type, const struct iovec __user *uvector,
 			ret = -EINVAL;
 			goto out;
 		}
-		if (type >= 0 && unlikely(!access_ok(buf, len))) {
+		if (type >= 0
+		    && unlikely(!access_ok(buf, len))) {
 			ret = -EFAULT;
 			goto out;
 		}
@@ -867,11 +847,9 @@ out:
 
 #ifdef CONFIG_COMPAT
 ssize_t compat_rw_copy_check_uvector(int type,
-				     const struct compat_iovec __user *uvector,
-				     unsigned long nr_segs,
-				     unsigned long fast_segs,
-				     struct iovec *fast_pointer,
-				     struct iovec **ret_pointer)
+		const struct compat_iovec __user *uvector, unsigned long nr_segs,
+		unsigned long fast_segs, struct iovec *fast_pointer,
+		struct iovec **ret_pointer)
 {
 	compat_ssize_t tot_len;
 	struct iovec *iov = *ret_pointer = fast_pointer;
@@ -898,7 +876,7 @@ ssize_t compat_rw_copy_check_uvector(int type,
 	*ret_pointer = iov;
 
 	ret = -EFAULT;
-	if (!access_ok(uvector, nr_segs * sizeof(*uvector)))
+	if (!access_ok(uvector, nr_segs*sizeof(*uvector)))
 		goto out;
 
 	/*
@@ -916,13 +894,14 @@ ssize_t compat_rw_copy_check_uvector(int type,
 		compat_ssize_t len;
 
 		if (__get_user(len, &uvector->iov_len) ||
-		    __get_user(buf, &uvector->iov_base)) {
+		   __get_user(buf, &uvector->iov_base)) {
 			ret = -EFAULT;
 			goto out;
 		}
-		if (len < 0) /* size_t not fitting in compat_ssize_t .. */
+		if (len < 0)	/* size_t not fitting in compat_ssize_t .. */
 			goto out;
-		if (type >= 0 && !access_ok(compat_ptr(buf), len)) {
+		if (type >= 0 &&
+		    !access_ok(compat_ptr(buf), len)) {
 			ret = -EFAULT;
 			goto out;
 		}
@@ -930,7 +909,7 @@ ssize_t compat_rw_copy_check_uvector(int type,
 			len = MAX_RW_COUNT - tot_len;
 		tot_len += len;
 		iov->iov_base = compat_ptr(buf);
-		iov->iov_len = (compat_size_t)len;
+		iov->iov_len = (compat_size_t) len;
 		uvector++;
 		iov++;
 	}
@@ -942,7 +921,7 @@ out:
 #endif
 
 static ssize_t do_iter_read(struct file *file, struct iov_iter *iter,
-			    loff_t *pos, rwf_t flags)
+		loff_t *pos, rwf_t flags)
 {
 	size_t tot_len;
 	ssize_t ret = 0;
@@ -970,7 +949,7 @@ out:
 }
 
 ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos,
-		      rwf_t flags)
+		rwf_t flags)
 {
 	if (!file->f_op->read_iter)
 		return -EINVAL;
@@ -979,7 +958,7 @@ ssize_t vfs_iter_read(struct file *file, struct iov_iter *iter, loff_t *ppos,
 EXPORT_SYMBOL(vfs_iter_read);
 
 static ssize_t do_iter_write(struct file *file, struct iov_iter *iter,
-			     loff_t *pos, rwf_t flags)
+		loff_t *pos, rwf_t flags)
 {
 	size_t tot_len;
 	ssize_t ret = 0;
@@ -1006,7 +985,7 @@ static ssize_t do_iter_write(struct file *file, struct iov_iter *iter,
 }
 
 ssize_t vfs_iter_write(struct file *file, struct iov_iter *iter, loff_t *ppos,
-		       rwf_t flags)
+		rwf_t flags)
 {
 	if (!file->f_op->write_iter)
 		return -EINVAL;
@@ -1032,7 +1011,7 @@ ssize_t vfs_readv(struct file *file, const struct iovec __user *vec,
 }
 
 static ssize_t vfs_writev(struct file *file, const struct iovec __user *vec,
-			  unsigned long vlen, loff_t *pos, rwf_t flags)
+		   unsigned long vlen, loff_t *pos, rwf_t flags)
 {
 	struct iovec iovstack[UIO_FASTIOV];
 	struct iovec *iov = iovstack;
@@ -1223,8 +1202,8 @@ static size_t compat_readv(struct file *file,
 }
 
 static size_t do_compat_readv(compat_ulong_t fd,
-			      const struct compat_iovec __user *vec,
-			      compat_ulong_t vlen, rwf_t flags)
+				 const struct compat_iovec __user *vec,
+				 compat_ulong_t vlen, rwf_t flags)
 {
 	struct fd f = fdget_pos(fd);
 	ssize_t ret;
@@ -1238,18 +1217,19 @@ static size_t do_compat_readv(compat_ulong_t fd,
 		f.file->f_pos = pos;
 	fdput_pos(f);
 	return ret;
+
 }
 
 COMPAT_SYSCALL_DEFINE3(readv, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen)
+		const struct compat_iovec __user *,vec,
+		compat_ulong_t, vlen)
 {
 	return do_compat_readv(fd, vec, vlen, 0);
 }
 
 static long do_compat_preadv64(unsigned long fd,
-			       const struct compat_iovec __user *vec,
-			       unsigned long vlen, loff_t pos, rwf_t flags)
+				  const struct compat_iovec __user *vec,
+				  unsigned long vlen, loff_t pos, rwf_t flags)
 {
 	struct fd f;
 	ssize_t ret;
@@ -1268,16 +1248,16 @@ static long do_compat_preadv64(unsigned long fd,
 
 #ifdef __ARCH_WANT_COMPAT_SYS_PREADV64
 COMPAT_SYSCALL_DEFINE4(preadv64, unsigned long, fd,
-		       const struct compat_iovec __user *, vec, unsigned long,
-		       vlen, loff_t, pos)
+		const struct compat_iovec __user *,vec,
+		unsigned long, vlen, loff_t, pos)
 {
 	return do_compat_preadv64(fd, vec, vlen, pos, 0);
 }
 #endif
 
 COMPAT_SYSCALL_DEFINE5(preadv, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen, u32, pos_low, u32, pos_high)
+		const struct compat_iovec __user *,vec,
+		compat_ulong_t, vlen, u32, pos_low, u32, pos_high)
 {
 	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
 
@@ -1286,8 +1266,8 @@ COMPAT_SYSCALL_DEFINE5(preadv, compat_ulong_t, fd,
 
 #ifdef __ARCH_WANT_COMPAT_SYS_PREADV64V2
 COMPAT_SYSCALL_DEFINE5(preadv64v2, unsigned long, fd,
-		       const struct compat_iovec __user *, vec, unsigned long,
-		       vlen, loff_t, pos, rwf_t, flags)
+		const struct compat_iovec __user *,vec,
+		unsigned long, vlen, loff_t, pos, rwf_t, flags)
 {
 	if (pos == -1)
 		return do_compat_readv(fd, vec, vlen, flags);
@@ -1297,8 +1277,9 @@ COMPAT_SYSCALL_DEFINE5(preadv64v2, unsigned long, fd,
 #endif
 
 COMPAT_SYSCALL_DEFINE6(preadv2, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen, u32, pos_low, u32, pos_high, rwf_t, flags)
+		const struct compat_iovec __user *,vec,
+		compat_ulong_t, vlen, u32, pos_low, u32, pos_high,
+		rwf_t, flags)
 {
 	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
 
@@ -1331,8 +1312,8 @@ static size_t compat_writev(struct file *file,
 }
 
 static size_t do_compat_writev(compat_ulong_t fd,
-			       const struct compat_iovec __user *vec,
-			       compat_ulong_t vlen, rwf_t flags)
+				  const struct compat_iovec __user* vec,
+				  compat_ulong_t vlen, rwf_t flags)
 {
 	struct fd f = fdget_pos(fd);
 	ssize_t ret;
@@ -1349,15 +1330,15 @@ static size_t do_compat_writev(compat_ulong_t fd,
 }
 
 COMPAT_SYSCALL_DEFINE3(writev, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen)
+		const struct compat_iovec __user *, vec,
+		compat_ulong_t, vlen)
 {
 	return do_compat_writev(fd, vec, vlen, 0);
 }
 
 static long do_compat_pwritev64(unsigned long fd,
-				const struct compat_iovec __user *vec,
-				unsigned long vlen, loff_t pos, rwf_t flags)
+				   const struct compat_iovec __user *vec,
+				   unsigned long vlen, loff_t pos, rwf_t flags)
 {
 	struct fd f;
 	ssize_t ret;
@@ -1376,16 +1357,16 @@ static long do_compat_pwritev64(unsigned long fd,
 
 #ifdef __ARCH_WANT_COMPAT_SYS_PWRITEV64
 COMPAT_SYSCALL_DEFINE4(pwritev64, unsigned long, fd,
-		       const struct compat_iovec __user *, vec, unsigned long,
-		       vlen, loff_t, pos)
+		const struct compat_iovec __user *,vec,
+		unsigned long, vlen, loff_t, pos)
 {
 	return do_compat_pwritev64(fd, vec, vlen, pos, 0);
 }
 #endif
 
 COMPAT_SYSCALL_DEFINE5(pwritev, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen, u32, pos_low, u32, pos_high)
+		const struct compat_iovec __user *,vec,
+		compat_ulong_t, vlen, u32, pos_low, u32, pos_high)
 {
 	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
 
@@ -1394,8 +1375,8 @@ COMPAT_SYSCALL_DEFINE5(pwritev, compat_ulong_t, fd,
 
 #ifdef __ARCH_WANT_COMPAT_SYS_PWRITEV64V2
 COMPAT_SYSCALL_DEFINE5(pwritev64v2, unsigned long, fd,
-		       const struct compat_iovec __user *, vec, unsigned long,
-		       vlen, loff_t, pos, rwf_t, flags)
+		const struct compat_iovec __user *,vec,
+		unsigned long, vlen, loff_t, pos, rwf_t, flags)
 {
 	if (pos == -1)
 		return do_compat_writev(fd, vec, vlen, flags);
@@ -1405,8 +1386,8 @@ COMPAT_SYSCALL_DEFINE5(pwritev64v2, unsigned long, fd,
 #endif
 
 COMPAT_SYSCALL_DEFINE6(pwritev2, compat_ulong_t, fd,
-		       const struct compat_iovec __user *, vec, compat_ulong_t,
-		       vlen, u32, pos_low, u32, pos_high, rwf_t, flags)
+		const struct compat_iovec __user *,vec,
+		compat_ulong_t, vlen, u32, pos_low, u32, pos_high, rwf_t, flags)
 {
 	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
 
@@ -1418,8 +1399,8 @@ COMPAT_SYSCALL_DEFINE6(pwritev2, compat_ulong_t, fd,
 
 #endif
 
-static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count,
-			   loff_t max)
+static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos,
+		  	   size_t count, loff_t max)
 {
 	struct fd in, out;
 	struct inode *in_inode, *out_inode;
@@ -1449,7 +1430,7 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count,
 	if (retval < 0)
 		goto fput_in;
 	if (count > MAX_RW_COUNT)
-		count = MAX_RW_COUNT;
+		count =  MAX_RW_COUNT;
 
 	/*
 	 * Get output file, and verify that it is ok..
@@ -1468,8 +1449,7 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos, size_t count,
 		goto fput_out;
 
 	if (!max)
-		max = min(in_inode->i_sb->s_maxbytes,
-			  out_inode->i_sb->s_maxbytes);
+		max = min(in_inode->i_sb->s_maxbytes, out_inode->i_sb->s_maxbytes);
 
 	if (unlikely(pos + count > max)) {
 		retval = -EOVERFLOW;
@@ -1518,8 +1498,7 @@ out:
 	return retval;
 }
 
-SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, off_t __user *, offset,
-		size_t, count)
+SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, off_t __user *, offset, size_t, count)
 {
 	loff_t pos;
 	off_t off;
@@ -1538,8 +1517,7 @@ SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, off_t __user *, offset,
 	return do_sendfile(out_fd, in_fd, NULL, count, 0);
 }
 
-SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd, loff_t __user *, offset,
-		size_t, count)
+SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd, loff_t __user *, offset, size_t, count)
 {
 	loff_t pos;
 	ssize_t ret;
@@ -1557,8 +1535,8 @@ SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd, loff_t __user *, offset,
 }
 
 #ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, compat_off_t __user *,
-		       offset, compat_size_t, count)
+COMPAT_SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd,
+		compat_off_t __user *, offset, compat_size_t, count)
 {
 	loff_t pos;
 	off_t off;
@@ -1578,7 +1556,7 @@ COMPAT_SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd, compat_off_t __user *,
 }
 
 COMPAT_SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd,
-		       compat_loff_t __user *, offset, compat_size_t, count)
+		compat_loff_t __user *, offset, compat_size_t, count)
 {
 	loff_t pos;
 	ssize_t ret;
@@ -1640,8 +1618,9 @@ static ssize_t do_copy_file_range(struct file *file_in, loff_t pos_in,
 	 */
 	if (file_out->f_op->copy_file_range &&
 	    file_out->f_op->copy_file_range == file_in->f_op->copy_file_range)
-		return file_out->f_op->copy_file_range(
-			file_in, pos_in, file_out, pos_out, len, flags);
+		return file_out->f_op->copy_file_range(file_in, pos_in,
+						       file_out, pos_out,
+						       len, flags);
 
 	return generic_copy_file_range(file_in, pos_in, file_out, pos_out, len,
 				       flags);
@@ -1653,8 +1632,8 @@ static ssize_t do_copy_file_range(struct file *file_in, loff_t pos_in,
  * the copy_file_range method.
  */
 ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
-			    struct file *file_out, loff_t pos_out, size_t len,
-			    unsigned int flags)
+			    struct file *file_out, loff_t pos_out,
+			    size_t len, unsigned int flags)
 {
 	ssize_t ret;
 
@@ -1687,10 +1666,10 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 	    file_inode(file_in)->i_sb == file_inode(file_out)->i_sb) {
 		loff_t cloned;
 
-		cloned = file_in->f_op->remap_file_range(
-			file_in, pos_in, file_out, pos_out,
-			min_t(loff_t, MAX_RW_COUNT, len),
-			REMAP_FILE_CAN_SHORTEN);
+		cloned = file_in->f_op->remap_file_range(file_in, pos_in,
+				file_out, pos_out,
+				min_t(loff_t, MAX_RW_COUNT, len),
+				REMAP_FILE_CAN_SHORTEN);
 		if (cloned > 0) {
 			ret = cloned;
 			goto done;
@@ -1698,7 +1677,7 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 	}
 
 	ret = do_copy_file_range(file_in, pos_in, file_out, pos_out, len,
-				 flags);
+				flags);
 	WARN_ON_ONCE(ret == -EOPNOTSUPP);
 done:
 	if (ret > 0) {
@@ -1717,9 +1696,9 @@ done:
 }
 EXPORT_SYMBOL(vfs_copy_file_range);
 
-SYSCALL_DEFINE6(copy_file_range, int, fd_in, loff_t __user *, off_in, int,
-		fd_out, loff_t __user *, off_out, size_t, len, unsigned int,
-		flags)
+SYSCALL_DEFINE6(copy_file_range, int, fd_in, loff_t __user *, off_in,
+		int, fd_out, loff_t __user *, off_out,
+		size_t, len, unsigned int, flags)
 {
 	loff_t pos_in;
 	loff_t pos_out;
@@ -1787,7 +1766,7 @@ static int remap_verify_area(struct file *file, loff_t pos, loff_t len,
 	if (unlikely(pos < 0 || len < 0))
 		return -EINVAL;
 
-	if (unlikely((loff_t)(pos + len) < 0))
+	 if (unlikely((loff_t) (pos + len) < 0))
 		return -EINVAL;
 
 	if (unlikely(inode->i_flctx && mandatory_lock(inode))) {
@@ -1795,7 +1774,7 @@ static int remap_verify_area(struct file *file, loff_t pos, loff_t len,
 		int retval;
 
 		retval = locks_mandatory_area(inode, file, pos, end,
-					      write ? F_WRLCK : F_RDLCK);
+				write ? F_WRLCK : F_RDLCK);
 		if (retval < 0)
 			return retval;
 	}
@@ -1814,8 +1793,10 @@ static int remap_verify_area(struct file *file, loff_t pos, loff_t len,
  * Shorten the request if possible.
  */
 static int generic_remap_check_len(struct inode *inode_in,
-				   struct inode *inode_out, loff_t pos_out,
-				   loff_t *len, unsigned int remap_flags)
+				   struct inode *inode_out,
+				   loff_t pos_out,
+				   loff_t *len,
+				   unsigned int remap_flags)
 {
 	u64 blkmask = i_blocksize(inode_in) - 1;
 	loff_t new_len = *len;
@@ -1898,7 +1879,8 @@ static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
 	while (len) {
 		src_poff = srcoff & (PAGE_SIZE - 1);
 		dest_poff = destoff & (PAGE_SIZE - 1);
-		cmp_len = min(PAGE_SIZE - src_poff, PAGE_SIZE - dest_poff);
+		cmp_len = min(PAGE_SIZE - src_poff,
+			      PAGE_SIZE - dest_poff);
 		cmp_len = min(cmp_len, len);
 		if (cmp_len <= 0)
 			goto out_error;
@@ -1940,7 +1922,7 @@ static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
 
 		kunmap_atomic(dest_addr);
 		kunmap_atomic(src_addr);
-	unlock:
+unlock:
 		vfs_unlock_two_pages(src_page, dest_page);
 		put_page(dest_page);
 		put_page(src_page);
@@ -2005,7 +1987,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
 
 	/* Check that we don't violate system file offset limits. */
 	ret = generic_remap_checks(file_in, pos_in, file_out, pos_out, len,
-				   remap_flags);
+			remap_flags);
 	if (ret)
 		return ret;
 
@@ -2014,13 +1996,13 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
 	if (!same_inode)
 		inode_dio_wait(inode_out);
 
-	ret = filemap_write_and_wait_range(inode_in->i_mapping, pos_in,
-					   pos_in + *len - 1);
+	ret = filemap_write_and_wait_range(inode_in->i_mapping,
+			pos_in, pos_in + *len - 1);
 	if (ret)
 		return ret;
 
-	ret = filemap_write_and_wait_range(inode_out->i_mapping, pos_out,
-					   pos_out + *len - 1);
+	ret = filemap_write_and_wait_range(inode_out->i_mapping,
+			pos_out, pos_out + *len - 1);
 	if (ret)
 		return ret;
 
@@ -2028,10 +2010,10 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
 	 * Check that the extents are the same.
 	 */
 	if (remap_flags & REMAP_FILE_DEDUP) {
-		bool is_same = false;
+		bool		is_same = false;
 
-		ret = vfs_dedupe_file_range_compare(inode_in, pos_in, inode_out,
-						    pos_out, *len, &is_same);
+		ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
+				inode_out, pos_out, *len, &is_same);
 		if (ret)
 			return ret;
 		if (!is_same)
@@ -2039,7 +2021,7 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
 	}
 
 	ret = generic_remap_check_len(inode_in, inode_out, pos_out, len,
-				      remap_flags);
+			remap_flags);
 	if (ret)
 		return ret;
 
@@ -2052,8 +2034,8 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
 EXPORT_SYMBOL(generic_remap_file_range_prep);
 
 loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
-			   struct file *file_out, loff_t pos_out, loff_t len,
-			   unsigned int remap_flags)
+			   struct file *file_out, loff_t pos_out,
+			   loff_t len, unsigned int remap_flags)
 {
 	loff_t ret;
 
@@ -2082,8 +2064,8 @@ loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
 	if (ret)
 		return ret;
 
-	ret = file_in->f_op->remap_file_range(file_in, pos_in, file_out,
-					      pos_out, len, remap_flags);
+	ret = file_in->f_op->remap_file_range(file_in, pos_in,
+			file_out, pos_out, len, remap_flags);
 	if (ret < 0)
 		return ret;
 
@@ -2094,8 +2076,8 @@ loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
 EXPORT_SYMBOL(do_clone_file_range);
 
 loff_t vfs_clone_file_range(struct file *file_in, loff_t pos_in,
-			    struct file *file_out, loff_t pos_out, loff_t len,
-			    unsigned int remap_flags)
+			    struct file *file_out, loff_t pos_out,
+			    loff_t len, unsigned int remap_flags)
 {
 	loff_t ret;
 
@@ -2128,8 +2110,8 @@ loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 {
 	loff_t ret;
 
-	WARN_ON_ONCE(remap_flags &
-		     ~(REMAP_FILE_DEDUP | REMAP_FILE_CAN_SHORTEN));
+	WARN_ON_ONCE(remap_flags & ~(REMAP_FILE_DEDUP |
+				     REMAP_FILE_CAN_SHORTEN));
 
 	ret = mnt_want_write_file(dst_file);
 	if (ret)
@@ -2161,8 +2143,7 @@ loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 	}
 
 	ret = dst_file->f_op->remap_file_range(src_file, src_pos, dst_file,
-					       dst_pos, len,
-					       remap_flags | REMAP_FILE_DEDUP);
+			dst_pos, len, remap_flags | REMAP_FILE_DEDUP);
 out_drop_write:
 	mnt_drop_write_file(dst_file);
 
@@ -2240,9 +2221,9 @@ int vfs_dedupe_file_range(struct file *file, struct file_dedupe_range *same)
 		else
 			info->bytes_deduped = len;
 
-	next_fdput:
+next_fdput:
 		fdput(dst_fd);
-	next_loop:
+next_loop:
 		if (fatal_signal_pending(current))
 			break;
 	}
